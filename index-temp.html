@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fitbit Research Data Collection - Authorization</title>
+    <title>Fitbit Research Data Collection - Authorization (Temp Version)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -66,13 +66,21 @@
             border-radius: 5px;
             margin: 15px 0;
         }
+        .temp-notice {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 5px; margin: 15px 0;">
-            <strong>⚠️ TEMPORARY MODE</strong><br>
-            This system is currently running in frontend-only mode for testing. For production use, please deploy the secure backend server as described in the README.
+        <div class="temp-notice">
+            <strong>⚠️ TEMPORARY VERSION</strong><br>
+            This is a temporary frontend-only version for testing. For production use, deploy the secure backend server as described in the documentation.
         </div>
 
         <div class="header">
@@ -121,8 +129,7 @@
     </div>
 
     <script>
-        // TEMPORARY: Frontend-only configuration for testing
-        // TODO: Replace with secure backend when ready
+        // TEMPORARY: Frontend-only version (NOT SECURE for production)
         const CLIENT_ID = '23QGNH';
         const REDIRECT_URI = 'https://o2genes.github.io/fitbit-data-collection/callback-temp.html';
         const SCOPES = 'activity heartrate location nutrition profile settings sleep social weight';
@@ -179,4 +186,4 @@
         });
     </script>
 </body>
-</html>
+</html> 
