@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitbit Research Data Collection - Authorization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            color: #00B2A9;
+            margin-bottom: 30px;
+        }
+        .info-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #00B2A9;
+        }
+        .auth-button {
+            display: inline-block;
+            background-color: #00B2A9;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        .auth-button:hover {
+            background-color: #008a82;
+        }
+        .footer-links {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .footer-links a {
+            color: #00B2A9;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Fitbit Research Data Collection</h1>
+            <h2>Participant Authorization</h2>
+        </div>
+
+        <div class="info-section">
+            <h3>About This Research</h3>
+            <p>We are conducting research using Fitbit data to better understand health patterns and behaviors. Your participation is voluntary and your data will be used solely for research purposes.</p>
+        </div>
+
+        <div class="info-section">
+            <h3>What Data We Will Access</h3>
+            <ul>
+                <li><strong>Activity Data:</strong> Steps, distance, calories burned, active minutes</li>
+                <li><strong>Sleep Data:</strong> Sleep duration, sleep stages, sleep efficiency</li>
+                <li><strong>Heart Rate:</strong> Resting heart rate, heart rate zones</li>
+                <li><strong>Profile Information:</strong> Age, gender, height, weight (if provided)</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <strong>Important:</strong> By clicking "Authorize Fitbit Access" below, you give permission for researchers to access your Fitbit data for research purposes. You can revoke this access at any time through your Fitbit account settings.
+        </div>
+
+        <div style="text-align: center;">
+            <a href="#" id="authButton" class="auth-button">Authorize Fitbit Access</a>
+        </div>
+
+        <div class="info-section">
+            <h3>Data Privacy & Security</h3>
+            <p>Your data will be:</p>
+            <ul>
+                <li>Stored securely and encrypted</li>
+                <li>Used only for research purposes</li>
+                <li>Never shared with third parties without your consent</li>
+                <li>De-identified when possible</li>
+            </ul>
+        </div>
+
+        <div class="footer-links">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+        </div>
+    </div>
+
+    <script>
+        // You need to replace these with your actual Fitbit app credentials
+        const CLIENT_ID = '23QGNH'; // Replace with your actual Client ID
+        const REDIRECT_URI = 'https://o2genes.github.io/fitbit-data-collection/callback.html';
+        const SCOPES = 'activity heartrate location nutrition profile settings sleep social weight';
+        
+        // Generate random state for security
+        function generateRandomState() {
+            return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        }
+
+        // Generate PKCE code verifier and challenge
+        function generateCodeVerifier() {
+            const array = new Uint8Array(32);
+            crypto.getRandomValues(array);
+            return btoa(String.fromCharCode.apply(null, array))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+
+        async function generateCodeChallenge(verifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+            return btoa(String.fromCharCode.apply(null, new Uint8Array(digest)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+
+        document.getElementById('authButton').addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            if (CLIENT_ID === 'YOUR_FITBIT_CLIENT_ID') {
+                alert('Please configure your Fitbit Client ID in the JavaScript code first!');
+                return;
+            }
+
+            // Generate PKCE parameters
+            const codeVerifier = generateCodeVerifier();
+            const codeChallenge = await generateCodeChallenge(codeVerifier);
+            const state = generateRandomState();
+
+            // Store PKCE verifier and state in localStorage for later use
+            localStorage.setItem('fitbit_code_verifier', codeVerifier);
+            localStorage.setItem('fitbit_state', state);
+
+            // Build authorization URL
+            const authUrl = 'https://www.fitbit.com/oauth2/authorize?' + 
+                'response_type=code&' +
+                'client_id=' + encodeURIComponent(CLIENT_ID) + '&' +
+                'redirect_uri=' + encodeURIComponent(REDIRECT_URI) + '&' +
+                'scope=' + encodeURIComponent(SCOPES) + '&' +
+                'code_challenge=' + encodeURIComponent(codeChallenge) + '&' +
+                'code_challenge_method=S256&' +
+                'state=' + encodeURIComponent(state);
+
+            // Redirect to Fitbit authorization page
+            window.location.href = authUrl;
+        });
+    </script>
+</body>
+</html>
