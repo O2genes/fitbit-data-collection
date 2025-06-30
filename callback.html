@@ -120,8 +120,8 @@
     </div>
 
     <script>
-        const CLIENT_ID = '23QGNH'; // Same as in index.html
-        const CLIENT_SECRET = '6510069aaf4f844f1dda9940bfdee8bc'; // Replace with your actual Client Secret
+        // All sensitive configuration now handled by secure backend
+        // Frontend only handles UI and user interaction
         
         async function handleCallback() {
             try {
@@ -144,24 +144,16 @@
                     return;
                 }
 
-                // Get stored PKCE verifier
-                const codeVerifier = localStorage.getItem('fitbit_code_verifier');
-                if (!codeVerifier) {
-                    showError('Missing PKCE code verifier. Please start the authorization process again.');
-                    return;
-                }
-
-                // Exchange authorization code for access token
-                const tokenResponse = await exchangeCodeForToken(code, codeVerifier);
+                // Exchange authorization code for access token via secure backend
+                const response = await exchangeCodeForToken(code);
                 
-                if (tokenResponse.access_token) {
-                    showSuccess(tokenResponse);
+                if (response.success && response.participantId) {
+                    showSuccess(response);
                     
                     // Clean up stored values
-                    localStorage.removeItem('fitbit_code_verifier');
                     localStorage.removeItem('fitbit_state');
                 } else {
-                    showError('Failed to get access token from Fitbit.');
+                    showError('Authorization failed: ' + (response.error || 'Unknown error'));
                 }
 
             } catch (error) {
@@ -170,56 +162,50 @@
             }
         }
 
-        async function exchangeCodeForToken(code, codeVerifier) {
-            const tokenUrl = 'https://api.fitbit.com/oauth2/token';
+        async function exchangeCodeForToken(code) {
+            // SECURE: Token exchange now happens on backend server
+            const backendUrl = 'https://your-backend-domain.com/api/auth/callback'; // Update with your backend URL
             
-            const body = new URLSearchParams({
-                'client_id': CLIENT_ID,
-                'grant_type': 'authorization_code',
-                'redirect_uri': 'https://o2genes.github.io/fitbit-data-collection/callback.html',
-                'code': code,
-                'code_verifier': codeVerifier
-            });
-
-            // Note: For production use, this should be done server-side to keep client_secret secure
-            const headers = {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': 'Basic ' + btoa(CLIENT_ID + ':' + CLIENT_SECRET)
-            };
-
-            const response = await fetch(tokenUrl, {
+            const response = await fetch(backendUrl, {
                 method: 'POST',
-                headers: headers,
-                body: body
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    code: code,
+                    state: localStorage.getItem('fitbit_state')
+                })
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error('Token exchange failed: ' + response.status + ' - ' + errorText);
+                throw new Error('Authorization failed: ' + response.status + ' - ' + errorText);
             }
 
             return await response.json();
         }
 
-        function showSuccess(tokenData) {
+        function showSuccess(response) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('success').style.display = 'block';
-            document.getElementById('tokenInfo').style.display = 'block';
-
-            // Generate a participant ID (you might want to make this more sophisticated)
-            const participantId = 'FITBIT_' + Date.now().toString(36).toUpperCase();
-            document.getElementById('participantId').textContent = participantId;
-
-            // Display token information for researchers
-            document.getElementById('accessToken').textContent = tokenData.access_token;
-            document.getElementById('refreshToken').textContent = tokenData.refresh_token || 'Not provided';
-            document.getElementById('userId').textContent = tokenData.user_id;
-            document.getElementById('expiresIn').textContent = tokenData.expires_in;
-            document.getElementById('scopes').textContent = tokenData.scope;
-
-            // Here you would typically send this data to your research database
-            // For now, we're just displaying it for the researcher to copy
-            console.log('Token data:', tokenData);
+            
+            // Display participant ID from secure backend
+            document.getElementById('participantId').textContent = response.participantId;
+            
+            // Hide token information section for security
+            document.getElementById('tokenInfo').style.display = 'none';
+            
+            // Update success message
+            const successDiv = document.getElementById('success');
+            successDiv.innerHTML = `
+                <h3>✅ Authorization Successful!</h3>
+                <p>Thank you for authorizing access to your Fitbit data. Your participation in this research is now active.</p>
+                <p><strong>Participant ID:</strong> <span id="participantId">${response.participantId}</span></p>
+                <p><strong>Status:</strong> Your data collection has started automatically. Researchers will securely access your authorized data for the study period.</p>
+                <p><strong>Your Privacy:</strong> Your tokens are securely stored and encrypted. You can revoke access at any time through your Fitbit account settings.</p>
+            `;
+            
+            console.log('Authorization successful for participant:', response.participantId);
         }
 
         function showError(message) {
@@ -238,10 +224,6 @@
 
         // Start the callback handling process
         window.onload = function() {
-            if (CLIENT_ID === 'YOUR_FITBIT_CLIENT_ID') {
-                showError('Fitbit Client ID not configured. Please update the JavaScript code.');
-                return;
-            }
             handleCallback();
         };
     </script>
